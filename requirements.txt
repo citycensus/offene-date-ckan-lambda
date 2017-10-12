@@ -1,2 +1,4 @@
 ckanapi
 agate
+simplejson
+boto3

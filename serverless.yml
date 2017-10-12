@@ -1,0 +1,23 @@
+service: open-data-germany-ckan
+
+provider:
+  name: aws
+  runtime: python2.7
+  profile: prototypefund
+  timeout: 300
+
+package:
+  include:
+    - od/lib/python2.7/site-packages
+    - orgs.py
+  exclude:
+    - od
+
+functions:
+  organisations:
+    handler: orgs.organisations
+    events:
+      - schedule:
+        name: organisations-schedule
+        description: 'Schedule for Org data updates'
+        rate: cron(0 2 * * ? *)
