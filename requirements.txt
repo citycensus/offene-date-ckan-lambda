@@ -1,4 +1,6 @@
 ckanapi
 agate
+agate-remote
 simplejson
 boto3
+httpretty
