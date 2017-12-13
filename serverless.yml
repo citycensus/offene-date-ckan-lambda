@@ -9,13 +9,21 @@ provider:
 package:
   include:
     - od/lib/python2.7/site-packages
-    - orgs.py
+    - stats/offene_daten.py
+    - stats/utils.py
+    - handlers.py
   exclude:
     - od
 
 functions:
   organisations:
     handler: orgs.organisations
+  single_city:
+    handler: handlers.single_city
+  compute_ranks:
+    handler: handlers.compute_ranks
+  get_all_cities:
+    handler: handlers.get_all_cities
     events:
       - schedule:
         name: organisations-schedule
