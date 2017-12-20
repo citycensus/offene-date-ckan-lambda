@@ -1,8 +1,9 @@
 import unittest
 import httpretty
 import agate
+import decimal
 
-from stats.offene_daten import OffeneDaten,open_formats_count
+from analysis.offene_daten import OffeneDaten,open_formats_count
 
 class TestOffeneDaten(object):
     def test_init(self):
@@ -66,19 +67,36 @@ class TestOffeneDaten(object):
         table = agate.Table.from_object(rows)
         result = od.get_org_format_aggregates(table)
         assert result["open_formats"] == 2
-    @httpretty.activate
-    def test_get_org_format_aggregate_failure(self):
-        httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/package_show?id=test",
-                body='{"success": true, "result": { "name": "test", "isopen": true, "resources": [{ "id":1}]}}',
-                content_type="application/json")
-        od = OffeneDaten()
-        org_data = {'packages': [{'name':'test','test': 'test'}]}
-        #table = agate.Table.from_object(rows)
-        result = od.add_package_stats({},org_data)
-        assert result["open_formats"] == 2
     def test_get_org_format_aggregate_detailed(self):
         od = OffeneDaten()
         rows = [{'format': 'CSV'}, {'format': 'csv'},{'format': 'json'}, {'format': 'PDF'},{'format': 'JSON'}]
         table = agate.Table.from_object(rows)
         result = od.get_org_format_aggregates(table)
         assert result["open_formats_datasets"] == 4
+
+    def test_get_org_group_aggregates_group_count(self):
+        od = OffeneDaten()
+        group1 = { 'title': 'Bildung'}
+        group2 = { 'title': 'Wirtschaft'}
+        rows = [{'groups': [group1]},{ 'groups': [group1, group2]} ]
+        result = od.get_org_groups_aggregate(rows)
+        assert result["groups"] == 2
+
+    def test_get_org_group_aggregates_group_datasets(self):
+        od = OffeneDaten()
+        group1 = { 'title': 'Bildung'}
+        group2 = { 'title': 'Wirtschaft'}
+        rows = [{'groups': [group1]},{ 'groups': [group1, group2]} ]
+        result = od.get_org_groups_aggregate(rows)
+        assert result["groups_dataset_variance"] == decimal.Decimal('0.5')
+
+    def test_get_open_datasets(self):
+        od = OffeneDaten()
+        package_data = [{"isopen": True},{"isopen": False}, {"isopen": True}]
+        assert len(od.get_open_datasets(package_data)) == 2
+
+    def test_get_open_formats_and_license(self):
+        od = OffeneDaten()
+        package_data = [{"isopen": True, "resources": [{"format": "CSV"}]},{"isopen": False, "resources": []}, {"isopen": True, "resources": [{"format": "XLS"}]}]
+        assert len(od.get_open_formats_and_license(package_data)) == 1
+
