@@ -3,3 +3,4 @@ od
 .DS_Store
 htmlcov
 __pycache__
+*.pyc
