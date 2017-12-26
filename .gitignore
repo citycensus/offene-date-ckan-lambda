@@ -1,3 +1,5 @@
 od
 *.swp
 .DS_Store
+htmlcov
+__pycache__
