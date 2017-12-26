@@ -100,3 +100,41 @@ class TestOffeneDaten(object):
         package_data = [{"isopen": True, "resources": [{"format": "CSV"}]},{"isopen": False, "resources": []}, {"isopen": True, "resources": [{"format": "XLS"}]}]
         assert len(od.get_open_formats_and_license(package_data)) == 1
 
+    def test_score_for_package_data(self):
+        od = OffeneDaten()
+        package_data = [{"isopen": True, "license_id": "cc-by 3.0", "metadata_modified": "2017-11-13", "resources": [{"format": "CSV"}]},{"isopen": False, "resources": []}, {"isopen": True, "resources": [{"format": "XLS"}]}]
+        assert od.score_for_package(package_data[0]) == 3
+
+    def test_get_package_stats_aggregates(self):
+        od = OffeneDaten()
+        package_data = [{"isopen": True, "license_id": "cc-by 3.0", "metadata_modified": "2017-11-13", "resources": [{"format": "CSV"}]},{"isopen": False, "license_id": "", "resources": []}, {"isopen": True, "license_id": "cc-by 3.0", "resources": [{"format": "XLS"}]}]
+        assert od.get_package_stats_aggregates(package_data) == 3
+
+    def test_score_for_license_is_open(self):
+        od = OffeneDaten()
+        assert od.score_for_license("cc-by 3.0") == 1
+
+    def test_score_for_license_is_open(self):
+        od = OffeneDaten()
+        assert od.score_for_license("closed") == 0
+
+    def test_score_for_format_is_open(self):
+        od = OffeneDaten()
+        assert od.score_for_format("CSV") == 1
+
+    def test_score_for_format_is_machine_radable_but_not_open(self):
+        od = OffeneDaten()
+        assert od.score_for_format("XLS") == 0.5
+
+    def test_score_for_format_is_open_and_maschine_readable(self):
+        od = OffeneDaten()
+        assert od.score_for_format("closed") == 0
+
+    def test_score_for_update_within_7_days(self):
+        od = OffeneDaten()
+        assert od.score_for_update("2017-12-20T14:05:18.786102") == 1
+
+    def test_score_for_update_within_30_days(self):
+        od = OffeneDaten()
+        assert od.score_for_update("2017-11-24T14:05:18.786102") == 0.5
+

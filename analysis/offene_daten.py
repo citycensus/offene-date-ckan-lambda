@@ -92,7 +92,9 @@ class OffeneDaten(object):
                 org['days_between_start_and_last_update'] = stats["days_between_start_and_last_update"]
                 org['category_count'] = stats["groups"]
                 org['category_variance'] = stats["group_variance"]
+                org['category_score'] = stats["group_score"]
                 org["open_license_and_format_count"] = stats["open_license_and_format_count"]
+                org["dataset_score"] = stats["dataset_score"]
             return(org)
 
     def create_org_table_for_org(self, org_id):
@@ -137,10 +139,12 @@ class OffeneDaten(object):
             "open_format_count": 0,
             "open_formats_datasets": 0,
             "groups": 0,
+            "group_score": 0,
             "group_variance": None,
             "days_since_update": None,
             "days_since_start": None,
             "days_between_start_and_last_update": None,
+            "dataset_score": 0,
         }
         if "packages" in org_data:
             stats = self.add_package_stats(stats, org_data)
@@ -157,6 +161,7 @@ class OffeneDaten(object):
                 date_aggregates = self.get_package_date_aggregates(package_table)
                 group_aggregates = self.get_org_groups_aggregate(package_data)
                 dataset_open_stats = self.get_open_stats(package_data)
+                dataset_package_stats = self.get_package_stats_aggregates(package_data)
                 days_since_last_update = None
                 days_since_start = None
                 if date_aggregates[ "max_date" ]:
@@ -175,9 +180,11 @@ class OffeneDaten(object):
                 stats["open_formats_datasets"] = format_aggregates.get("open_formats_datasets",0)
                 stats["groups"] = group_aggregates.get("groups",0)
                 stats["group_variance"] = group_aggregates.get("groups_dataset_variance",None)
+                stats["group_score"] = group_aggregates.get("group_score",0)
                 stats["days_since_update"] = days_since_last_update
                 stats["days_since_start"] = days_since_start
                 stats["days_between_start_and_last_update"] = days_between_start_and_last_update
+                stats["dataset_score"] = dataset_package_stats["package_score"]
 
         return stats
 
@@ -190,12 +197,18 @@ class OffeneDaten(object):
             ('open_data_count', agate.Count())
         ])
     def get_package_stats(self, package_table):
+        count_open_licenses = agate.Summary('license_id', agate.Number(), lambda r: sum(license_id in utils.OPEN_LICENSES for license_id in r.values()))
         return package_table.aggregate([
-                ('open_data_count', agate.Count('isopen', True))
+            ('open_data_count', count_open_licenses)
             ])
     def get_package_data(self, package_name):
         return self.od.action.package_show(id=package_name)
 
+    def get_package_stats_aggregates(self, package_data):
+        data = [self.score_for_package(package) for package in package_data]
+        if len(data) > 0:
+            return { "package_score": sum(data)/len(data)}
+        return {"package_score": 0}
     def get_package_date_aggregates(self, package_table):
         return package_table.aggregate([
             ('min_date', agate.Min('created')),
@@ -233,7 +246,8 @@ class OffeneDaten(object):
                 if len(group_aggregates) > 1:
                     result = {
                             "groups": len(set(package_groups)),
-                            "groups_dataset_variance": group_aggregates.aggregate(agate.Variance('count'))
+                            "groups_dataset_variance": group_aggregates.aggregate(agate.Variance('count')),
+                            "group_score": self.score_for_groups(len(group_aggregates))
                         }
         return result
 
@@ -282,4 +296,43 @@ class OffeneDaten(object):
                 org['city_type'] = extra['value']
         return(org)
 
+    def score_for_groups(self, group_count):
+        if(group_count == len(utils.GROUPS)):
+            return 1
+        elif(group_count >= (len(utils.GROUPS)/2)):
+            return 0.5
+        return 0
+
+    def score_for_update(self, update_date):
+        try:
+            update_datetime = datetime.datetime.strptime(update_date, "%Y-%m-%dT%H:%M:%S.%f")
+        except ValueError:
+            return 0
+        else:
+            today = datetime.datetime.today()
+            update_date_delta = today - update_datetime
+            if update_date_delta.days < 7:
+                return 1
+            if update_date_delta.days < 30:
+                return 0.5
+        return 0
+    def score_for_license(self, license):
+        if license.lower() in utils.OPEN_LICENSES:
+            return 1
+        return 0
+    def score_for_format(self,file_format):
+        file_format = file_format.lower()
+        if file_format in utils.OPEN_FORMATS:
+            if file_format in utils.MACHINE_READABLE_FORMATS:
+                return 1
+            return 0.5
+        if file_format in utils.MACHINE_READABLE_FORMATS:
+            return 0.5
+        return 0
+    def score_for_package(self, package):
+        score_license = self.score_for_license(package["license_id"])
+        score_update_time = self.score_for_update(package["metadata_modified"])
+        score_formats = [self.score_for_format(resource["format"]) for resource in package["resources"]]
+        score_formats_score = 0 if len(score_formats) < 1 else max(score_formats)
+        return score_license + score_formats_score + score_update_time
 
