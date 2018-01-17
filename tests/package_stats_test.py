@@ -80,6 +80,11 @@ class TestPackageStats(unittest.TestCase):
         raw_stats = self.package.raw_stats()
         assert raw_stats[0] == { 'format': 1, 'groups':'', 'id': 'berlin', 'license': 1, 'update_time': 1, 'overall': 3}
 
+    def test_raw_stats_empty_data(self):
+        self.package = PackageStats([])
+        raw_stats = self.package.raw_stats()
+        assert raw_stats == []
+
     def test_raw_stats_groups(self):
         data = [{ "name": "berlin", "license_id": "", "groups": [{ "title": "Bildung"},{ "title": "Arbeit"}], "resources": [{"format": "", "created": self.today_formatted}], "extras": [ { "key": "metadata_modified", "value": self.today_formatted}]}]
         package = PackageStats(data)
