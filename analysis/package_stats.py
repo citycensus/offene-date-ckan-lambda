@@ -98,25 +98,25 @@ class PackageStats(object):
         self.resource_stats = self._package_resource_table().compute([
             ('open_format', agate.Formula(agate.Boolean(), open_formats_count)),
             ])
-        self.resource_stats = self.resource_stats.aggregate([
-            ('open_format_count', agate.Count('open_format', True)),
-            ('min_date', agate.Min('created')),
-            ('max_date', agate.Max('created'))
+        if len(self._package_resource_table()) > 0:
+            self.resource_stats = self.resource_stats.aggregate([
+                ('open_format_count', agate.Count('open_format', True)),
+                ('min_date', agate.Min('created')),
+                ('max_date', agate.Max('created'))
+                ])
+            format_table = self._package_resource_table().group_by("format").aggregate([
+                ('count', agate.Count()),
+                ])
+            count = format_table.aggregate([
+                ('different_formats', agate.Count()),
             ])
-        format_table = self._package_resource_table().group_by("format").aggregate([
-            ('count', agate.Count()),
-            ])
-        count = format_table.aggregate([
-            ('different_formats', agate.Count()),
-        ])
-        self.open_datasets = self.overall_package_stats.get("open_data_count",0)
-        self.open_format_count = self.resource_stats.get("open_format_count",0)
-        self.format_count = count.get("different_formats", 0)
-        self.compute_dates()
+            self.open_datasets = self.overall_package_stats.get("open_data_count",0)
+            self.open_format_count = self.resource_stats.get("open_format_count",0)
+            self.format_count = count.get("different_formats", 0)
+            self.compute_dates()
 
     def compute_dates(self):
         if self.resource_stats[ "max_date" ]:
-            print(self.resource_stats["max_date"])
             time_delta = datetime.datetime.today() - self.resource_stats[ "max_date" ]
             self.days_since_last_update = time_delta.days
 
