@@ -45,7 +45,9 @@ class Organisation(object):
         return agate.Table.from_object(filter(None, [self.row()]), column_types=utils.ORG_COLUMN_TYPE)
 
     def raw_stats_table(self):
-        return agate.Table.from_object(filter(None, self.package_stats.raw_stats()), column_types=utils.RAW_STATS_COLUMN_TYPES)
+        if len(self.get_package_raw_stats()) > 0:
+            return agate.Table.from_object(filter(None, self.package_stats.raw_stats()), column_types=utils.RAW_STATS_COLUMN_TYPES)
+        return agate.Table.from_object([])
 
     def get_org_data(self, include_datasets=False):
         self.org_data = self.API.get_org_data(self.org_id, include_datasets)

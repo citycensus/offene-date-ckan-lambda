@@ -1,6 +1,7 @@
 import unittest
 import httpretty
 import decimal
+import agate
 
 from analysis.organisation import Organisation
 
@@ -82,3 +83,19 @@ class TestOrganisation(unittest.TestCase):
             content_type="application/json")
         self.org.collect_stats()
         assert self.org.row()["open_formats"] == 3
+
+    @httpretty.activate
+    def test_raw_stats_no_packages(self):
+        httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
+            body='{"success": true, "result": { "name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            content_type="application/json")
+        self.org.collect_stats()
+        assert self.org.get_package_raw_stats() == []
+
+    @httpretty.activate
+    def test_raw_stats_table_no_packages(self):
+        httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
+            body='{"success": true, "result": { "name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            content_type="application/json")
+        self.org.collect_stats()
+        assert len(self.org.raw_stats_table()) == 0
