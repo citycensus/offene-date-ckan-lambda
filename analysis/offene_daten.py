@@ -8,22 +8,11 @@ import agate
 import simplejson as json
 import boto3
 import analysis.utils as utils
+from analysis.offene_daten_api import OffeneDatenAPI
+from analysis.organisation import Organisation
 
 stadt_types = ('Stadt', 'Landeshauptstadt', 'Freie und Hansestadt', 'Hansestadt', u'Universitätsstadt', 'Verbandsgemeinde', 'Kreisstadt') #Landkreis ?
 number = agate.Number()
-
-"""
-5 Anzahl
-10 Anzahl pro Kategorie
-30 Zeit seit dem letzten Update
-10 Start
-10 letztes Update - Start
-20 Anzahl offener Daten
-5 Anzahl verschiedener Formate
-10 Anzahl offener Formate (csv,geojson)
-"""
-def overall_rank(row):
-    return decimal.Decimal(0.05)*row['dataset_rank']+ decimal.Decimal(0.05)*row['formats_rank']+ decimal.Decimal(0.1)*row['open_formats_rank']+ decimal.Decimal(0.3)*row['last_update_rank']+ decimal.Decimal(0.2)*row['open_datasets_rank']
 
 def open_formats_count(row):
     file_format = row['format']
@@ -41,6 +30,11 @@ class OffeneDaten(object):
     def get_all_cities(self):
         self.get_all_orgs()
         return filter(None, [self.get_city_org(org) for org in self.orgs])
+
+    def get_data_for_org(self, org_id):
+        org = Organisation(org_id)
+        org.collect_stats()
+        return {'table': org.table(), 'raw_stats_table': org.raw_stats_table()}
 
     def get_data_for_orgs(self, org_ids):
         self.orgs = org_ids
