@@ -23,6 +23,14 @@ GROUPS = ("bevoelkerung",
     "umwelt-und-klima",
     "verbraucherschutz",
     "wirtschaft-und-arbeit")
+RAW_STATS_COLUMN_TYPES = {
+        'id': text,
+        'groups': text,
+        'license': number,
+        'format': number,
+        'update_time': number,
+        'overall': number,
+        }
 ORG_COLUMN_TYPE = {
         'id': text,
         'name': text,
@@ -45,6 +53,13 @@ ORG_COLUMN_TYPE = {
         'category_variance': number,
         'open_license_and_format_count': number,
         'dataset_score': number,
+        }
+
+RAW_DATA_COLUMN_TYPES = {
+        'update_time': number,
+        'license': number,
+        'overall': number,
+        'id': number,
         }
 
 OPEN_FORMATS = ['csv', 'xml', 'json', 'geojson', 'gml', 'rss','txt', 'tsv', 'tiff']
@@ -70,6 +85,10 @@ def transform_file(s3_file):
         print('city:', s3_file['Key'])
         return agate.Table.from_url(url,column_types=ORG_COLUMN_TYPE)
     return None
+
+def join_groups(item):
+    item["groups"] = ",".join(item["groups"])
+    return item
 
 def collect_all_cities():
     client = boto3.client('s3')
@@ -107,25 +126,25 @@ def compute_ranks(table):
     table = table.compute([
         ('dataset_rank', agate.Rank('datasets', reverse=True)),
         ('formats_rank', agate.Rank('format_count', reverse=True)),
-        ('open_formats_rank', agate.Rank('open_formats', reverse=True)),
+        #('open_formats_rank', agate.Rank('open_formats', reverse=True)),
         ('last_update_rank', agate.Rank('days_since_last_update')),
-        ('open_datasets_rank', agate.Rank('open_datasets', reverse=True)),
+        #('open_datasets_rank', agate.Rank('open_datasets', reverse=True)),
         ('category_rank', agate.Rank('category_count', reverse=True)),
         ('category_variance_rank', agate.Rank('category_variance')),
-        ('update_start_rank', agate.Rank('days_between_start_and_last_update')),
-        ('start_rank', agate.Rank('days_since_start', reverse=True)),
-        ('openess_score', agate.Formula(number, openness_score)),
+        #('update_start_rank', agate.Rank('days_between_start_and_last_update')),
+        #('start_rank', agate.Rank('days_since_start', reverse=True)),
+        #('openess_score', agate.Formula(number, openness_score)),
         ('dataset_score_rank', agate.Rank('dataset_score', reverse=True)),
         ('category_score_rank', agate.Rank('category_score', reverse=True)),
     ])
     table = table.compute([
-        ('dataset_score_rank_std', StandadizeScore('dataset_score_rank')),
         ('dataset_rank_std', StandadizeScore('dataset_rank')),
-        ('category_score_rank_std', StandadizeScore('category_score_rank')),
-        ('category_variance_rank_std', StandadizeScore('category_variance_rank')),
         ('formats_rank_std', StandadizeScore('formats_rank')),
         ('last_update_rank_std', StandadizeScore('last_update_rank')),
         ('category_rank_std', StandadizeScore('category_rank')),
+        ('category_variance_rank_std', StandadizeScore('category_variance_rank')),
+        ('dataset_score_rank_std', StandadizeScore('dataset_score_rank')),
+        ('category_score_rank_std', StandadizeScore('category_score_rank')),
         ])
     table = table.compute([
         ('overall_rank_data', agate.Formula(agate.Number(), overall_rank))

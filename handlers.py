@@ -81,10 +81,12 @@ def single_city(event, context):
     city = event['city_name']
     print('single city import started: ', city)
     od = OffeneDaten()
-    od.get_data_for_orgs([city])
-    if len(od.orgs_table) > 0:
-        od.orgs_table.to_csv(city_filename('/tmp',city, 'csv'))
+    result = od.get_data_for_org(city)
+    if len(result["table"]) > 0:
+        result["table"].to_csv(city_filename('/tmp',city, 'csv'))
+        result["raw_stats_table"].to_csv('/tmp/{}_raw_data.csv'.format(city))
         utils.upload_file_to_s3(city_filename('cities',city, 'csv'),city_filename('/tmp',city, 'csv'))
+        utils.upload_file_to_s3('cities/package_stats/{}.csv'.format(city),'/tmp/{}_raw_data.csv'.format(city))
     data = {
             'job_name': 'collect_single_city',
             'date': datetime.date.today().strftime('%Y-%m-%d'),
