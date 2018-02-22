@@ -10,6 +10,11 @@ class Organisation(object):
         self.org_data = {}
         self.display_name = ''
         self.created = ''
+        self.latitude = 0,
+        self.longitude = 0
+        self.contact_person = ''
+        self.city_type = ''
+        self.portal = ''
         self.package_data = []
         self.package_count = len(self.package_data)
         self.package_resources = []
@@ -20,13 +25,13 @@ class Organisation(object):
                 'id': self.org_id,
                 'name': self.display_name,
                 'created_at': self.created,
-                'portal': '',
+                'portal': self.portal,
                 'datasets': self.package_count,
-                'latitude': 0,
-                'longitude': 0,
-                'contact_person': '',
+                'latitude': self.latitude,
+                'longitude': self.longitude,
+                'contact_person': self.contact_person,
                 'contact_email': '',
-                'city_type': '',
+                'city_type': self.city_type,
                 'format_count':self.package_stats.format_count,
                 'open_formats': self.package_stats.open_format_count,
                 'open_formats_datasets': self.package_stats.open_formats_datasets,
@@ -51,6 +56,21 @@ class Organisation(object):
 
     def get_org_data(self, include_datasets=False):
         self.org_data = self.API.get_org_data(self.org_id, include_datasets)
+        self.display_name = self.org_data['display_name']
+        self.created = self.org_data['created']
+        for extra in self.org_data['extras']:
+            if extra['key'] == 'latitude':
+                self.latitude= extra['value']
+            elif extra['key'] == 'longitude':
+                self.longitude = extra['value']
+            elif extra['key'] == 'contact_person':
+                self.contact_person = extra['value']
+            #elif extra['key'] == 'contact_email':
+            #    org['contact_email'] = extra['value']
+            elif extra['key'] == 'open_data_portal':
+                self.portal = extra['value']
+            elif extra['key'] == 'city_type':
+                self.city_type = extra['value']
 
     def collect_packages_and_resources(self):
         if self.org_data == {}:

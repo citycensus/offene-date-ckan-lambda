@@ -155,7 +155,7 @@ def compute_ranks(table):
     return table
 
 def filter_ranks(table):
-    include_columns = ['id','overall_rank', 'dataset_rank', 'formats_rank', 'open_formats_rank', 'last_update_rank', 'open_datasets_rank', 'category_rank', 'category_variance_rank', 'update_start_rank', 'start_rank', 'dataset_score_rank']
+    include_columns = ['id','overall_rank']
     return table.select(include_columns)
 
 def has_open_format_in_resources(data):
