@@ -77,6 +77,13 @@ def get_all_cities(event, context):
 def city_filename(folder, city, file_format):
     return '{}/{}.{}'.format(folder, city, file_format)
 
+def means(stats):
+    return stats.aggregate([
+        ('update_time_mean', agate.Mean('update_time')),
+        ('license_mean', agate.Mean('license')),
+        ('format_mean', agate.Mean('format'))
+    ]);
+
 def single_city(event, context):
     city = event['city_name']
     print('single city import started: ', city)
@@ -85,8 +92,12 @@ def single_city(event, context):
     if len(result["table"]) > 0:
         result["table"].to_csv(city_filename('/tmp',city, 'csv'))
         result["raw_stats_table"].to_csv('/tmp/{}_raw_data.csv'.format(city))
+        raw_means = means(result["raw_stats_table"])
+        with open('/tmp/{}_raw_data_means.json'.format(city), 'w') as f:
+            json.dump(raw_means, f)
         utils.upload_file_to_s3(city_filename('cities',city, 'csv'),city_filename('/tmp',city, 'csv'))
-        utils.upload_file_to_s3('cities/package_stats/{}.csv'.format(city),'/tmp/{}_raw_data.csv'.format(city))
+        utils.upload_file_to_s3('package_stats/{}.csv'.format(city),'/tmp/{}_raw_data.csv'.format(city))
+        utils.upload_file_to_s3('package_stats_means/{}.json'.format(city),'/tmp/{}_raw_data_means.json'.format(city))
     data = {
             'job_name': 'collect_single_city',
             'date': datetime.date.today().strftime('%Y-%m-%d'),

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import unittest
 import httpretty
 import agate
@@ -26,7 +27,7 @@ class TestOffeneDaten(object):
                 body='{"success": true, "result": ["land"]}',
                 content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=land&include_datasets=False",
-                body='{"success": true, "result": { "name": "land", "extras": [{ "key": "city_type", "value": "Land"}]}}',
+                body='{"success": true, "result": {"package_count": 0, "name": "land", "extras": [{ "key": "city_type", "value": "Land"}]}}',
                 content_type="application/json")
         od = OffeneDaten()
         assert od.get_all_cities() == []
@@ -37,10 +38,10 @@ class TestOffeneDaten(object):
                 body='{"success": true, "result": ["berlin"]}',
                 content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=False",
-                body='{"success": true, "result": { "name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+                body='{"success": true, "result": { "package_count": 0,"name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
                 content_type="application/json")
         od = OffeneDaten()
-        assert od.get_all_cities() == [{ "name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}]
+        assert od.get_all_cities() == [{ "package_count": 0,"name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}]
 
     @httpretty.activate
     def test_get_all_cities_multiple(self):
@@ -48,13 +49,13 @@ class TestOffeneDaten(object):
                 body='{"success": true, "result": ["land", "berlin"]}',
                 content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=False",
-                body='{"success": true, "result": { "name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+                body='{"success": true, "result": { "package_count": 0,"name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
                 content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=land&include_datasets=False",
-                body='{"success": true, "result": { "name": "land", "extras": [{ "key": "city_type", "value": "Land"}]}}',
+                body='{"success": true, "result": { "package_count": 0,"name": "land", "extras": [{ "key": "city_type", "value": "Land"}]}}',
                 content_type="application/json")
         od = OffeneDaten()
-        assert od.get_all_cities() == [{ "name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}]
+        assert od.get_all_cities() == [{ "package_count": 0,"name": "berlin", "extras": [{ "key": "city_type", "value": "Stadt"}]}]
 
     def test_open_formats_count(self):
         assert open_formats_count({'format': None}) == False
@@ -141,4 +142,9 @@ class TestOffeneDaten(object):
         od = OffeneDaten()
         ## today minus 30 days
         #assert od.score_for_update("2017-11-24T14:05:18.786102") == 0.5
+
+    def test_is_city(self):
+        od = OffeneDaten()
+        city_data = { "name": "land", "extras": [{ "key": "city_type", "value": u"Universitätsstadt"}]}
+        assert od.is_city(city_data) == True
 

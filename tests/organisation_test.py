@@ -5,6 +5,8 @@ import agate
 
 from analysis.organisation import Organisation
 
+default_body = '{"success": true, "result": { "package_count": 1, "display_name": "berlin", "created": "", "name": "berlin", "packages": [{"name": "berlin"}], "extras": [{ "key": "city_type", "value": "Stadt"}]}}'
+
 class TestOrganisation(unittest.TestCase):
     def setUp(self):
         self.org = Organisation('berlin')
@@ -41,7 +43,7 @@ class TestOrganisation(unittest.TestCase):
     @httpretty.activate
     def test_open_data_count_count(self):
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
-                body='{"success": true, "result": { "name": "berlin", "packages": [{"name": "berlin"}], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            body=default_body,
             content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/package_show?id=berlin",
                 body='{"success": true, "result": { "name": "berlin", "license_id": "cc-by", "groups": [], "resources": [{"name": "einwohner","format": "", "created": "2017-12-20T14:05:18.921473"}]}}',
@@ -52,7 +54,7 @@ class TestOrganisation(unittest.TestCase):
     @httpretty.activate
     def test_open_data_count(self):
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
-            body='{"success": true, "result": { "name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+                body=default_body,
             content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/package_show?id=berlin",
                 body='{"success": true, "result": { "name": "berlin", "groups": [], "resources": ["format": "", "created": ""]}}',
@@ -63,7 +65,7 @@ class TestOrganisation(unittest.TestCase):
     @httpretty.activate
     def test_open_format_single_package_count(self):
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
-            body='{"success": true, "result": { "name": "berlin", "packages": [{"name": "berlin"}], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            body='{"success": true, "result": { "package_count": 1, "display_name": "berlin", "created": "", "name": "berlin", "packages": [{"name": "berlin"}], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
             content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/package_show?id=berlin",
                 body='{"success": true, "result": { "name": "berlin", "license_id": "cc-by", "groups": [], "resources": [{"name": "einwohner", "format": "CSV", "created": "2017-12-20T14:05:18.921473"}]}}',
@@ -73,10 +75,10 @@ class TestOrganisation(unittest.TestCase):
     @httpretty.activate
     def test_open_format_multiple_package_count(self):
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
-                body='{"success": true, "result": { "name": "berlin", "packages": [{"name": "berlin"}, { "name": "berlin-2"}], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            body='{"success": true, "result": { "package_count": 2, "display_name": "berlin", "created": "", "name": "berlin", "packages": [{"name": "berlin"}, { "name": "berlin-2"}], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
             content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/package_show?id=berlin",
-                body='{"success": true, "result": { "name": "berlin", "license_id": "cc-by", "groups": [], "resources": [{"name": "einwohner", "format": "CSV"}, { "name": "", "format": "JSON", "created": "2017-12-20T14:05:18.921473"}]}}',
+            body='{"success": true, "result": { "name": "berlin", "license_id": "cc-by", "groups": [], "resources": [{"name": "einwohner", "format": "CSV"}, { "name": "", "format": "JSON", "created": "2017-12-20T14:05:18.921473"}]}}',
             content_type="application/json")
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/package_show?id=berlin-2",
                 body='{"success": true, "result": { "name": "berlin", "license_id": "cc-by", "groups": [], "resources": [{"name": "einwohner", "format": "CSV", "created": "2017-12-20T14:05:18.921473"}]}}',
@@ -87,7 +89,7 @@ class TestOrganisation(unittest.TestCase):
     @httpretty.activate
     def test_raw_stats_no_packages(self):
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
-            body='{"success": true, "result": { "name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            body='{"success": true, "result": { "package_count": 1, "display_name": "berlin", "created": "", "name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
             content_type="application/json")
         self.org.collect_stats()
         assert self.org.get_package_raw_stats() == []
@@ -95,7 +97,7 @@ class TestOrganisation(unittest.TestCase):
     @httpretty.activate
     def test_raw_stats_table_no_packages(self):
         httpretty.register_uri(httpretty.POST, "https://offenedaten.de/api/action/organization_show?id=berlin&include_datasets=True",
-            body='{"success": true, "result": { "name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
+            body='{"success": true, "result": { "package_count": 1, "display_name": "berlin", "created": "","name": "berlin", "packages": [], "extras": [{ "key": "city_type", "value": "Stadt"}]}}',
             content_type="application/json")
         self.org.collect_stats()
         assert len(self.org.raw_stats_table()) == 0
