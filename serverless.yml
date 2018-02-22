@@ -12,6 +12,7 @@ package:
     - stats/offene_daten.py
     - stats/utils.py
     - handlers.py
+    - hamburg.py
   exclude:
     - od
 
@@ -22,6 +23,12 @@ functions:
     handler: handlers.single_city
   compute_ranks:
     handler: handlers.compute_ranks
+  map_reduce:
+    handler: hamburg.start_map_reduce
+  coordinator:
+    handler: hamburg.coordinator
+  mapper:
+    handler: hamburg.mapper
   get_all_cities:
     handler: handlers.get_all_cities
     events:
