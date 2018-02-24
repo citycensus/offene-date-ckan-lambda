@@ -49,6 +49,20 @@ class TestPackageStats(unittest.TestCase):
         self.package._overall_stats()
         assert self.package.open_datasets == 0
 
+    def test_machine_readable_per_package_count(self):
+        data = [{ "name": "berlin", "license_id": "", "metadata_modified": "", "groups": [], "resources": [{"format": "csv", "created": self.today_formatted}], "extras": [{ 'key': "metadata_modified", 'value': self.today_formatted}]}]
+        self.package = PackageStats(data)
+        self.package._overall_stats()
+        print(self.package._package_resource_table())
+        assert self.package.open_formats_datasets == 1
+
+    def test_machine_readable_per_package_count_multiple(self):
+        data = [{ "name": "berlin-1", "license_id": "", "metadata_modified": "", "groups": [], "resources": [{"format": "csv", "created": self.today_formatted}], "extras": [{ 'key': "metadata_modified", 'value': self.today_formatted}]},{ "name": "berlin", "license_id": "", "metadata_modified": "", "groups": [], "resources": [{"format": "csv", "created": self.today_formatted}], "extras": [{ 'key': "metadata_modified", 'value': self.today_formatted}]}]
+        self.package = PackageStats(data)
+        self.package._overall_stats()
+        print(self.package._package_resource_table())
+        assert self.package.open_formats_datasets == 2
+
     def test_open_format_single_package_count(self):
         self.package._overall_stats()
         assert self.package.open_format_count == 1
