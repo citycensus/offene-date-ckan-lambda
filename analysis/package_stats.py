@@ -61,6 +61,8 @@ class PackageStats(object):
             update_datetime = dateutil.parser.parse(update_date, ignoretz=True)
         except ValueError:
             return 0
+        except TypeError:
+            return 0
         except OverflowError:
             return 0
         else:
