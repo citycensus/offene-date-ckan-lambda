@@ -2,6 +2,7 @@ from analysis.offene_daten_api import OffeneDatenAPI
 import analysis.utils as utils
 import agate
 import datetime
+import dateutil.parser
 
 class PackageStats(object):
     def __init__(self, data):
@@ -46,20 +47,24 @@ class PackageStats(object):
             return 0.5
         return 0
 
+    def calculate_score_for_date(self, update_datetime):
+        today = datetime.datetime.today()
+        update_date_delta = today - update_datetime
+        if update_date_delta.days < 7:
+            return 1
+        if update_date_delta.days < 30:
+            return 0.5
+        return 0
+
     def score_for_update(self, update_date):
         try:
-            update_datetime = datetime.datetime.strptime(update_date, "%Y-%m-%dT%H:%M:%S.%f")
+            update_datetime = dateutil.parser.parse(update_date, ignoretz=True)
         except ValueError:
             return 0
-        except TypeError:
+        except OverflowError:
             return 0
         else:
-            today = datetime.datetime.today()
-            update_date_delta = today - update_datetime
-            if update_date_delta.days < 7:
-                return 1
-            if update_date_delta.days < 30:
-                return 0.5
+            return self.calculate_score_for_date(update_datetime)
         return 0
     def score_for_license(self, license):
         if license.lower() in utils.OPEN_LICENSES:
