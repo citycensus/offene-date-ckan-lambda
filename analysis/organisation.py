@@ -20,6 +20,11 @@ class Organisation(object):
         self.package_resources = []
         self.package_stats = PackageStats(self.package_data)
 
+    def set_package_data(self, data):
+        self.package_data = data
+        self.package_count = len(self.package_data)
+        self.package_stats = PackageStats(self.package_data)
+
     def row(self):
         return {
                 'id': self.org_id,
