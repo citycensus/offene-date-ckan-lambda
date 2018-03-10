@@ -63,10 +63,10 @@ def reducer(event, context):
     city = event['city_name']
     bucket = event['bucket']
     print('single city import started: ', city)
-    data = get_data(bucket, city)
+    data_and_keys = get_data(bucket, city)
     org = Organisation(city)
     org.get_org_data()
-    org.set_package_data(data)
+    org.set_package_data(data_and_keys['data'])
     org.collect_stats()
     result = {'table': org.table(), 'raw_stats_table': org.raw_stats_table()}
     print(result['raw_stats_table'])
@@ -87,6 +87,7 @@ def reducer(event, context):
     with open(city_filename('/tmp',city, 'json'), 'w') as f:
         json.dump(data, f)
     utils.upload_file_to_s3(city_filename('cities',city, 'json'),city_filename('/tmp',city, 'json'))
+    [delete_object(file_key) for file_key in data_and_keys['data_keys']]
     body = {
         "message": "Go Serverless v1.0! Your function executed successfully!",
         "input": event
@@ -99,18 +100,24 @@ def reducer(event, context):
 
     return response
 
+def delete_object(bucket, file_key):
+    s3_client = boto3.client('s3')
+    s3_client.delete_object(Bucket=bucket, Key=file_key)
+
 def get_data(bucket, job_id):
     s3_client = boto3.client('s3')
     paginator = s3_client.get_paginator('list_objects')
     pages = paginator.paginate(Bucket=bucket, Prefix='{}/'.format(job_id))
     data = []
+    data_keys = []
     for page in pages:
         for job in page['Contents']:
             if '.json' in job['Key']:
+                data_keys.append(job['Key'])
                 obj = s3_client.get_object(Bucket=bucket, Key=job['Key'])
                 job_data = json.loads(obj['Body'].read())
                 data = data + job_data
-    return data
+    return {data: data, data_keys: data_keys }
 
 def get_jobs(bucket):
     s3_client = boto3.client('s3')
