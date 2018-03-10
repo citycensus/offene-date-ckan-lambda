@@ -12,10 +12,15 @@ package:
     - stats/offene_daten.py
     - stats/utils.py
     - handlers.py
+    - mapreduce.py
   exclude:
     - od
 
 functions:
+  city_start:
+    mapreduce.start_map_reduce
+  mapper:
+    mapreduce.mapper
   organisations:
     handler: orgs.organisations
   single_city:
